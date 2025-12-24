@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -20,36 +20,99 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-interface UserData {
-  id: string;
-  telegram_id: number;
-  username: string;
-  first_name: string;
-  last_name: string;
-  photo_url: string | null;
+interface TelegramData {
+  id: number;
+  username?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  photo_url?: string | null;
+}
+
+interface SubscriptionData {
+  blocked: boolean;
+  deleted: boolean;
+  is_tarif: boolean;
+  end_date: string | null;
+  type: string | null;
+  device_limit_expires_at: string | null;
+  auto_payment_enabled: boolean;
+}
+
+interface ConnectionData {
+  url: string | null;
+  short_id: string | null;
+}
+
+interface PaymentData {
+  amount: number;
+  status: string;
+  created_at: string;
+  processed_at?: string | null;
+  duration?: number | null;
+  device_count?: number | null;
+  subscription_type?: string | null;
+  payment_id?: string | number | null;
+}
+
+interface MeResponse {
+  telegram: TelegramData;
+  connection: ConnectionData;
+  subscription: SubscriptionData;
+  payments: PaymentData[];
 }
 
 const Dashboard = () => {
-  const [user, setUser] = useState<UserData | null>(null);
+  const [profile, setProfile] = useState<MeResponse | null>(null);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("vpn_user");
-    const session = localStorage.getItem("vpn_session");
-    
-    if (!storedUser || !session) {
-      navigate("/auth");
-      return;
-    }
-    
-    setUser(JSON.parse(storedUser));
+    const loadProfile = async () => {
+      try {
+        const response = await fetch("/api/me", { credentials: "include" });
+        if (response.status === 401) {
+          toast({
+            title: "Нужна авторизация",
+            description: "Пожалуйста, войдите через Telegram.",
+            variant: "destructive",
+          });
+          navigate("/auth");
+          return;
+        }
+        if (response.status === 403) {
+          const data = await response.json().catch(() => ({}));
+          toast({
+            title: "Доступ ограничен",
+            description: data.detail || "Аккаунт заблокирован или удалён.",
+            variant: "destructive",
+          });
+          navigate("/auth");
+          return;
+        }
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.detail || "Не удалось загрузить профиль");
+        }
+        const data: MeResponse = await response.json();
+        setProfile(data);
+      } catch (error) {
+        toast({
+          title: "Ошибка загрузки",
+          description: error instanceof Error ? error.message : "Попробуйте позже",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfile();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("vpn_user");
-    localStorage.removeItem("vpn_session");
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => null);
     toast({
       title: "Выход выполнен",
       description: "До скорой встречи!",
@@ -58,27 +121,44 @@ const Dashboard = () => {
   };
 
   const copyKey = () => {
-    navigator.clipboard.writeText("vless://demo-key-12345@server.realityvpn.com:443");
+    if (!profile?.connection.url) {
+      return;
+    }
+    navigator.clipboard.writeText(profile.connection.url);
     setCopied(true);
     toast({
       title: "Скопировано",
-      description: "Ключ скопирован в буфер обмена",
+      description: "Ссылка подключения скопирована в буфер обмена",
     });
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const mockSubscription = {
-    plan: "Полгода",
-    status: "active",
-    startAt: "2024-01-15",
-    endAt: "2024-07-15",
-    daysLeft: 180,
+  const parseDate = (value?: string | null) => {
+    if (!value) return null;
+    const normalized = value.includes("T") ? value : value.replace(" ", "T");
+    const date = new Date(normalized);
+    return Number.isNaN(date.getTime()) ? null : date;
   };
 
-  const mockPayments = [
-    { id: 1, date: "2024-01-15", amount: 25, currency: "EUR", status: "completed", plan: "Полгода" },
-    { id: 2, date: "2023-07-10", amount: 5, currency: "EUR", status: "completed", plan: "Месяц" },
-  ];
+  const subscriptionEnd = useMemo(
+    () => parseDate(profile?.subscription.end_date),
+    [profile?.subscription.end_date],
+  );
+  const subscriptionActive = subscriptionEnd ? subscriptionEnd.getTime() > Date.now() : false;
+  const subscriptionEndMsk = subscriptionEnd
+    ? subscriptionEnd.toLocaleString("ru-RU", {
+        timeZone: "Europe/Moscow",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+
+  const subscriptionDaysLeft = subscriptionEnd
+    ? Math.max(0, Math.ceil((subscriptionEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   const devices = [
     { name: "iOS", icon: Smartphone, instructions: "Скачайте Shadowrocket или V2rayNG" },
@@ -87,10 +167,18 @@ const Dashboard = () => {
     { name: "macOS", icon: Laptop, instructions: "Скачайте V2rayU или Nekoray" },
   ];
 
-  if (!user) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Загрузка...</div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Не удалось загрузить данные</div>
       </div>
     );
   }
@@ -115,7 +203,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
               <User className="w-4 h-4" />
-              <span>{user.first_name} {user.last_name}</span>
+              <span>{profile.telegram.first_name} {profile.telegram.last_name}</span>
             </div>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />
@@ -178,28 +266,32 @@ const Dashboard = () => {
                       <p className="text-muted-foreground">Управляйте вашим планом</p>
                     </div>
                     <div className={`px-4 py-2 rounded-full text-sm font-medium ${
-                      mockSubscription.status === "active" 
+                      subscriptionActive
                         ? "bg-green-500/20 text-green-400" 
                         : "bg-red-500/20 text-red-400"
                     }`}>
-                      {mockSubscription.status === "active" ? "Активна" : "Неактивна"}
+                      {subscriptionActive ? "Активна" : "Неактивна"}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-4 rounded-xl bg-muted/50">
                       <p className="text-sm text-muted-foreground mb-1">Текущий план</p>
-                      <p className="text-lg font-semibold text-gradient">{mockSubscription.plan}</p>
+                      <p className="text-lg font-semibold text-gradient">
+                        {profile.subscription.type || "Не задан"}
+                      </p>
                     </div>
                     <div className="p-4 rounded-xl bg-muted/50">
                       <p className="text-sm text-muted-foreground mb-1">Действует до</p>
-                      <p className="text-lg font-semibold">{mockSubscription.endAt}</p>
+                      <p className="text-lg font-semibold">
+                        {subscriptionEndMsk || "Нет данных"}
+                      </p>
                     </div>
                     <div className="p-4 rounded-xl bg-muted/50">
                       <p className="text-sm text-muted-foreground mb-1">Осталось дней</p>
                       <p className="text-lg font-semibold flex items-center gap-2">
                         <Clock className="w-5 h-5 text-primary" />
-                        {mockSubscription.daysLeft}
+                        {subscriptionDaysLeft ?? "—"}
                       </p>
                     </div>
                   </div>
@@ -221,14 +313,30 @@ const Dashboard = () => {
                   
                   <div className="p-4 rounded-xl bg-muted/50 mb-4">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-medium">Ваш ключ подключения</p>
-                      <Button variant="ghost" size="sm" onClick={copyKey}>
+                      <p className="text-sm font-medium">Подключение</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={copyKey}
+                        disabled={!profile.connection.url}
+                      >
                         {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                       </Button>
                     </div>
-                    <code className="block text-sm text-muted-foreground font-mono bg-background/50 p-3 rounded-lg overflow-x-auto">
-                      vless://demo-key-12345@server.realityvpn.com:443
-                    </code>
+                    {profile.connection.url ? (
+                      <a
+                        href={profile.connection.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm text-primary font-mono bg-background/50 p-3 rounded-lg break-all hover:underline"
+                      >
+                        {profile.connection.url}
+                      </a>
+                    ) : (
+                      <p className="text-sm text-muted-foreground bg-background/50 p-3 rounded-lg">
+                        Подписка не найдена, обратитесь в поддержку
+                      </p>
+                    )}
                   </div>
 
                   <Button variant="outline" className="w-full">
@@ -274,17 +382,28 @@ const Dashboard = () => {
                   
                   <div className="p-4 rounded-xl bg-muted/50 mb-4">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-medium">VLESS ключ</p>
+                      <p className="text-sm font-medium">Ссылка подключения</p>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={copyKey}>
+                        <Button variant="ghost" size="sm" onClick={copyKey} disabled={!profile.connection.url}>
                           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                           <span className="ml-1">Копировать</span>
                         </Button>
                       </div>
                     </div>
-                    <code className="block text-sm text-muted-foreground font-mono bg-background/50 p-3 rounded-lg overflow-x-auto break-all">
-                      vless://demo-key-12345@server.realityvpn.com:443?encryption=none&security=reality&sni=www.google.com
-                    </code>
+                    {profile.connection.url ? (
+                      <a
+                        href={profile.connection.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm text-primary font-mono bg-background/50 p-3 rounded-lg break-all hover:underline"
+                      >
+                        {profile.connection.url}
+                      </a>
+                    ) : (
+                      <p className="text-sm text-muted-foreground bg-background/50 p-3 rounded-lg">
+                        Подписка не найдена, обратитесь в поддержку
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex gap-3">
@@ -316,35 +435,44 @@ const Dashboard = () => {
                     <thead>
                       <tr className="border-b border-border">
                         <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Дата</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">План</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Тип</th>
                         <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Сумма</th>
                         <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Статус</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {mockPayments.map((payment) => (
-                        <tr key={payment.id} className="border-b border-border/50">
-                          <td className="py-4 px-4 text-sm">{payment.date}</td>
-                          <td className="py-4 px-4 text-sm">{payment.plan}</td>
-                          <td className="py-4 px-4 text-sm font-medium">
-                            €{payment.amount}
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              payment.status === "completed"
-                                ? "bg-green-500/20 text-green-400"
-                                : "bg-yellow-500/20 text-yellow-400"
-                            }`}>
-                              {payment.status === "completed" ? "Оплачен" : "В обработке"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {profile.payments.map((payment) => {
+                        const createdAt = parseDate(payment.created_at);
+                        const createdLabel = createdAt
+                          ? createdAt.toLocaleDateString("ru-RU")
+                          : payment.created_at;
+                        return (
+                          <tr
+                            key={payment.payment_id ?? `${payment.created_at}-${payment.amount}`}
+                            className="border-b border-border/50"
+                          >
+                            <td className="py-4 px-4 text-sm">{createdLabel}</td>
+                            <td className="py-4 px-4 text-sm">
+                              {payment.subscription_type || "—"}
+                            </td>
+                            <td className="py-4 px-4 text-sm font-medium">{payment.amount}</td>
+                            <td className="py-4 px-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                payment.status === "completed"
+                                  ? "bg-green-500/20 text-green-400"
+                                  : "bg-yellow-500/20 text-yellow-400"
+                              }`}>
+                                {payment.status === "completed" ? "Оплачен" : payment.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
 
-                {mockPayments.length === 0 && (
+                {profile.payments.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <CreditCard className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>История платежей пуста</p>
@@ -360,26 +488,30 @@ const Dashboard = () => {
 
                 <div className="flex items-center gap-6 mb-8">
                   <div className="w-20 h-20 rounded-2xl bg-gradient-primary flex items-center justify-center text-3xl font-bold text-primary-foreground">
-                    {user.first_name.charAt(0)}
+                    {(profile.telegram.first_name || "П").charAt(0)}
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold">{user.first_name} {user.last_name}</h3>
-                    <p className="text-muted-foreground">@{user.username}</p>
+                    <h3 className="text-xl font-semibold">
+                      {profile.telegram.first_name} {profile.telegram.last_name}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {profile.telegram.username ? `@${profile.telegram.username}` : "Без username"}
+                    </p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div className="p-4 rounded-xl bg-muted/50">
                     <p className="text-sm text-muted-foreground mb-1">Telegram ID</p>
-                    <p className="font-mono">{user.telegram_id}</p>
+                    <p className="font-mono">{profile.telegram.id}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50">
                     <p className="text-sm text-muted-foreground mb-1">Username</p>
-                    <p>@{user.username}</p>
+                    <p>{profile.telegram.username ? `@${profile.telegram.username}` : "—"}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50">
                     <p className="text-sm text-muted-foreground mb-1">Имя</p>
-                    <p>{user.first_name} {user.last_name}</p>
+                    <p>{profile.telegram.first_name} {profile.telegram.last_name}</p>
                   </div>
                 </div>
 
