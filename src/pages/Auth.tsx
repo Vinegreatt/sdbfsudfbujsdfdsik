@@ -1,40 +1,89 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Shield, Send, ArrowLeft, Loader2 } from "lucide-react";
+import { Shield, ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+type TelegramUser = {
+  id: number;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
+};
+
+declare global {
+  interface Window {
+    onTelegramAuth?: (user: TelegramUser) => void;
+  }
+}
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [widgetReady, setWidgetReady] = useState(false);
   const navigate = useNavigate();
+  const widgetRef = useRef<HTMLDivElement>(null);
 
-  const handleTelegramLogin = async () => {
-    setIsLoading(true);
-    
-    // Симуляция входа через Telegram (в реальности здесь будет Telegram Login Widget)
-    // Для демонстрации создаём мок-пользователя
-    setTimeout(() => {
-      const mockUser = {
-        id: "mock-user-id",
-        telegram_id: 123456789,
-        username: "demo_user",
-        first_name: "Демо",
-        last_name: "Пользователь",
-        photo_url: null,
-      };
-      
-      localStorage.setItem("vpn_user", JSON.stringify(mockUser));
-      localStorage.setItem("vpn_session", "demo-session-token");
-      
-      toast({
-        title: "Успешный вход",
-        description: "Добро пожаловать в RealityVPN!",
-      });
-      
-      navigate("/dashboard");
-      setIsLoading(false);
-    }, 1500);
-  };
+  useEffect(() => {
+    const botUsername = import.meta.env.VITE_TELEGRAM_LOGIN_BOT_USERNAME as string | undefined;
+
+    if (!botUsername || !widgetRef.current) {
+      return;
+    }
+
+    window.onTelegramAuth = async (user: TelegramUser) => {
+      setIsLoading(true);
+      try {
+        const response = await fetch("/api/auth/telegram/callback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(user),
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.detail || "Не удалось выполнить вход");
+        }
+
+        toast({
+          title: "Успешный вход",
+          description: "Добро пожаловать в RealityVPN!",
+        });
+
+        navigate("/dashboard");
+      } catch (error) {
+        toast({
+          title: "Ошибка входа",
+          description: error instanceof Error ? error.message : "Попробуйте позже",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    widgetRef.current.innerHTML = "";
+    const script = document.createElement("script");
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.async = true;
+    script.setAttribute("data-telegram-login", botUsername);
+    script.setAttribute("data-size", "large");
+    script.setAttribute("data-userpic", "true");
+    script.setAttribute("data-request-access", "write");
+    script.setAttribute("data-onauth", "onTelegramAuth(user)");
+    script.onload = () => setWidgetReady(true);
+    widgetRef.current.appendChild(script);
+
+    return () => {
+      if (widgetRef.current) {
+        widgetRef.current.innerHTML = "";
+      }
+      window.onTelegramAuth = undefined;
+    };
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
@@ -70,20 +119,21 @@ const Auth = () => {
             </div>
 
             {/* Telegram Login Button */}
-            <Button
-              variant="telegram"
-              size="xl"
-              className="w-full mb-6"
-              onClick={handleTelegramLogin}
-              disabled={isLoading}
-            >
-              {isLoading ? (
+            <div className="w-full mb-6 flex justify-center">
+              <div ref={widgetRef} />
+            </div>
+            {!widgetReady && (
+              <Button variant="telegram" size="xl" className="w-full mb-6" disabled>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5 mr-2" />
-              )}
-              {isLoading ? "Подключение..." : "Войти через Telegram"}
-            </Button>
+                Загрузка Telegram Login...
+              </Button>
+            )}
+            {isLoading && (
+              <div className="flex items-center justify-center text-sm text-muted-foreground mb-4">
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Авторизация через Telegram...
+              </div>
+            )}
 
             {/* Info */}
             <div className="text-center text-sm text-muted-foreground">
@@ -120,9 +170,11 @@ const Auth = () => {
           </div>
 
           {/* Demo Notice */}
-          <p className="text-center text-sm text-muted-foreground mt-6">
-            Демо-режим: нажмите кнопку для входа с тестовым аккаунтом
-          </p>
+          {!import.meta.env.VITE_TELEGRAM_LOGIN_BOT_USERNAME && (
+            <p className="text-center text-sm text-muted-foreground mt-6">
+              Укажите VITE_TELEGRAM_LOGIN_BOT_USERNAME, чтобы отобразить кнопку входа
+            </p>
+          )}
         </div>
       </div>
     </div>
