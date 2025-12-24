@@ -75,8 +75,8 @@ const Pricing = () => {
               className={`relative p-8 rounded-2xl ${
                 plan.popular
                   ? "bg-gradient-to-b from-primary/10 to-secondary/10 border-2 border-primary shadow-neon-lg"
-                  : "bg-glass border border-border"
-              } transition-all duration-300 hover:scale-105`}
+                  : "bg-glass border border-border/70 shadow-card"
+              } transition-all duration-300 hover:-translate-y-1`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-primary flex items-center gap-1">
@@ -88,7 +88,7 @@ const Pricing = () => {
               <div className="text-center mb-6">
                 <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-4xl font-bold text-gradient">€{plan.price}</span>
+                  <span className="text-5xl font-bold text-gradient">€{plan.price}</span>
                   <span className="text-muted-foreground">{plan.period}</span>
                 </div>
                 {plan.pricePerMonth && (

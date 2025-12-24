@@ -38,7 +38,7 @@ const Testimonials = () => {
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
-              className="p-6 rounded-2xl bg-glass border border-border hover:border-primary/50 transition-all duration-300"
+              className="p-6 rounded-2xl bg-glass border border-border/70 hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-card"
             >
               <div className="flex gap-1 mb-4">
                 {[...Array(testimonial.rating)].map((_, i) => (
