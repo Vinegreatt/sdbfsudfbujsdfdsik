@@ -6,7 +6,7 @@ const Hero = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-hero" />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-glow" />
@@ -22,7 +22,7 @@ const Hero = () => {
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-5xl mx-auto text-center">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-glass border border-border mb-8 animate-fade-up">
             <Zap className="w-4 h-4 text-primary" />
@@ -64,17 +64,24 @@ const Hero = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto animate-fade-up" style={{ animationDelay: "0.4s" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto animate-fade-up" style={{ animationDelay: "0.4s" }}>
             {[
               { value: "10Gbps", label: "Скорость" },
               { value: "50+", label: "Локаций" },
               { value: "99.9%", label: "Uptime" },
             ].map((stat, index) => (
-              <div key={index} className="text-center">
+              <div key={index} className="text-center rounded-2xl border border-border/60 bg-glass px-4 py-4">
                 <div className="text-2xl md:text-3xl font-bold text-gradient mb-1">{stat.value}</div>
                 <div className="text-sm text-muted-foreground">{stat.label}</div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4 text-xs uppercase tracking-[0.3em] text-muted-foreground/70 animate-fade-up" style={{ animationDelay: "0.5s" }}>
+            <span>WireGuard</span>
+            <span>Zero-Log</span>
+            <span>Reality Protocol</span>
+            <span>Anti-Censorship</span>
           </div>
         </div>
 

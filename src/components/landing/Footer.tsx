@@ -3,7 +3,7 @@ import { Shield, Send, MessageCircle } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="py-16 border-t border-border">
+    <footer className="py-16 border-t border-border bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           {/* Brand */}
