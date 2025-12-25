@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import os
 import sqlite3
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Request
@@ -117,6 +118,38 @@ def require_session(request: Request) -> TelegramSession:
     return TelegramSession(**telegram)
 
 
+def _parse_iso_z(dt_str: str | None) -> datetime | None:
+    if not dt_str:
+        return None
+    return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+
+
+def _days_left(expire_at: datetime | None) -> int | None:
+    if not expire_at:
+        return None
+    now = datetime.now(timezone.utc)
+    delta = expire_at - now
+    return max(0, int(delta.total_seconds() // 86400))
+
+
+def _detect_plan(user: dict) -> str | None:
+    ext = user.get("externalSquadUuid")
+    trial_lte = os.getenv("TRIAL_LTE_EXTERNAL_SQUAD")
+    trial_wifi = os.getenv("TRIAL_WIFI_EXTERNAL_SQUAD")
+    paid_lte = os.getenv("PAID_LTE_EXTERNAL_SQUAD")
+    paid_wifi = os.getenv("PAID_WIFI_EXTERNAL_SQUAD")
+
+    if ext and trial_lte and ext == trial_lte:
+        return "lte"
+    if ext and paid_lte and ext == paid_lte:
+        return "lte"
+    if ext and trial_wifi and ext == trial_wifi:
+        return "wifi"
+    if ext and paid_wifi and ext == paid_wifi:
+        return "wifi"
+    return None
+
+
 @app.post("/api/auth/telegram/callback")
 async def telegram_callback(payload: TelegramAuthPayload, request: Request) -> Dict[str, bool]:
     if not verify_telegram_payload(payload):
@@ -129,6 +162,7 @@ async def telegram_callback(payload: TelegramAuthPayload, request: Request) -> D
         "last_name": payload.last_name,
         "photo_url": payload.photo_url,
     }
+    request.session["telegram_id"] = payload.id
 
     return {"ok": True}
 
@@ -141,77 +175,76 @@ async def logout(request: Request) -> Dict[str, bool]:
 
 @app.get("/api/me")
 async def get_me(request: Request) -> Dict[str, Any]:
-    session = require_session(request)
-    telegram_id = session.id
+    telegram_id = request.session.get("telegram_id")
+    if not telegram_id:
+        raise HTTPException(status_code=401, detail="Требуется авторизация")
 
-    link = await X3Web().get_subscription_link(str(telegram_id))
-    short_uuid = None
-    if link:
-        short_uuid = link.rstrip("/").split("/")[-1]
-
-    user_row = await fetch_sqlite_row(
-        """
-        SELECT Ref, Is_delete, Is_block, Is_tarif, subscription_end_date,
-               subscription_type, device_limit_expires_at, auto_payment_enabled
-        FROM users
-        WHERE User_id = ?
-        """,
-        (telegram_id,),
-    )
-
-    if user_row is None:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
-
-    is_block = bool(user_row.get("Is_block"))
-    is_delete = bool(user_row.get("Is_delete"))
-
-    if is_block or is_delete:
+    user = await X3Web().get_user_by_username(str(telegram_id))
+    if not user:
         raise HTTPException(
             status_code=403,
-            detail="Доступ ограничен: аккаунт заблокирован или удалён",
+            detail="Подписка не найдена, обратитесь в поддержку",
         )
 
-    payment_rows = await fetch_sqlite_rows(
-        """
-        SELECT amount, status, created_at, processed_at, duration, device_count,
-               subscription_type, payment_id
-        FROM payments
-        WHERE user_id = ?
-        ORDER BY created_at DESC
-        LIMIT 100
-        """,
-        (telegram_id,),
-    )
+    status = (user.get("status") or "").upper()
+    revoked_at = user.get("subRevokedAt")
+    if status not in ("ACTIVE",) or revoked_at:
+        raise HTTPException(status_code=403, detail="Подписка не активна")
+
+    expire_at = _parse_iso_z(user.get("expireAt"))
+    plan = _detect_plan(user)
+
+    limit_bytes = user.get("trafficLimitBytes")
+    used_bytes = (user.get("userTraffic") or {}).get("usedTrafficBytes")
 
     return {
-        "telegram": session.model_dump(),
-        "connection": {
-            "url": link,
-            "short_id": short_uuid,
-        },
-        "subscription": {
-            "blocked": is_block,
-            "deleted": is_delete,
-            "is_tarif": bool(user_row.get("Is_tarif")),
-            "end_date": user_row.get("subscription_end_date"),
-            "type": user_row.get("subscription_type"),
-            "device_limit_expires_at": user_row.get("device_limit_expires_at"),
-            "auto_payment_enabled": bool(user_row.get("auto_payment_enabled")),
-        },
-        "payments": payment_rows,
+        "telegram_id": telegram_id,
+        "username": user.get("username"),
+        "status": status,
+        "plan": plan,
+        "expire_at": user.get("expireAt"),
+        "days_left": _days_left(expire_at),
+        "device_limit": user.get("hwidDeviceLimit"),
+        "subscription_link": user.get("subscriptionUrl")
+        or (
+            f"https://subscription.realityvpn.ru/{user.get('shortUuid')}"
+            if user.get("shortUuid")
+            else None
+        ),
+        "traffic_limit_bytes": limit_bytes,
+        "traffic_used_bytes": used_bytes,
+        "internal_squads": user.get("activeInternalSquads") or [],
     }
 
 
 @app.get("/api/devices")
 async def get_devices(request: Request) -> Dict[str, Any]:
-    session = require_session(request)
-    devices = await X3Web().devices(str(session.id))
+    telegram_id = request.session.get("telegram_id")
+    if not telegram_id:
+        raise HTTPException(status_code=401, detail="Требуется авторизация")
+
+    user = await X3Web().get_user_by_username(str(telegram_id))
+    if not user:
+        raise HTTPException(
+            status_code=403,
+            detail="Подписка не найдена, обратитесь в поддержку",
+        )
+    devices = await X3Web().devices_by_user_id(int(user["id"]))
     return {"devices": devices}
 
 
 @app.delete("/api/devices/{hwid}")
 async def delete_device(hwid: str, request: Request) -> Dict[str, Any]:
-    session = require_session(request)
-    await X3Web().delete_device(str(session.id), hwid)
-    devices = await X3Web().devices(str(session.id))
+    telegram_id = request.session.get("telegram_id")
+    if not telegram_id:
+        raise HTTPException(status_code=401, detail="Требуется авторизация")
+
+    user = await X3Web().get_user_by_username(str(telegram_id))
+    if not user:
+        raise HTTPException(
+            status_code=403,
+            detail="Подписка не найдена, обратитесь в поддержку",
+        )
+    await X3Web().delete_device_by_user_id(int(user["id"]), hwid)
+    devices = await X3Web().devices_by_user_id(int(user["id"]))
     return {"devices": devices}
