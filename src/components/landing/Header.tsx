@@ -62,6 +62,9 @@ const Header = () => {
               Поддержка
             </a>
           </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/auth">Личный кабинет</Link>
+          </Button>
           <Button variant="hero" size="sm" asChild>
             <a
               href="https://t.me/RealityVpnShop_bot"
@@ -107,6 +110,11 @@ const Header = () => {
                 >
                   Поддержка
                 </a>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                  Личный кабинет
+                </Link>
               </Button>
               <Button variant="hero" asChild>
                 <a
