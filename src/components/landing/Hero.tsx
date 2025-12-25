@@ -1,10 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Shield, Zap, Lock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { MessageCircle, Zap, Lock } from "lucide-react";
 
 const Hero = () => {
-  const navigate = useNavigate();
-
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
       {/* Background Effects */}
@@ -26,62 +23,42 @@ const Hero = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-glass border border-border mb-8 animate-fade-up">
             <Zap className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground">Молниеносная скорость соединения</span>
+            <span className="text-sm text-muted-foreground">Подключение и управление через Telegram-бота</span>
           </div>
 
           {/* Main Heading */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
-            Безопасность в сети
+            Доступ к VPN
             <br />
-            <span className="text-gradient glow-text">без компромиссов</span>
+            <span className="text-gradient glow-text">без лишних шагов</span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto animate-fade-up" style={{ animationDelay: "0.2s" }}>
-            RealityVPN — премиальный VPN-сервис с максимальной скоростью, 
-            полной анонимностью и надёжной защитой ваших данных
+            RealityVPN — сервис VPN-доступа. Оформление подписки,
+            продление и получение инструкций выполняются в Telegram-боте.
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-up" style={{ animationDelay: "0.3s" }}>
-            <Button
-              variant="hero"
-              size="xl"
-              onClick={() => navigate("/auth")}
-              className="w-full sm:w-auto"
-            >
-              <Shield className="w-5 h-5 mr-2" />
-              Начать бесплатно
+            <Button variant="hero" size="xl" className="w-full sm:w-auto" asChild>
+              <a
+                href="https://t.me/RealityVpnShop_bot"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Открыть бота
+              </a>
             </Button>
-            <Button
-              variant="outline"
-              size="xl"
-              onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
-              className="w-full sm:w-auto"
-            >
-              Смотреть тарифы
+            <Button variant="outline" size="xl" className="w-full sm:w-auto" asChild>
+              <a
+                href="https://t.me/RealityVPNadmin"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Связаться с поддержкой
+              </a>
             </Button>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto animate-fade-up" style={{ animationDelay: "0.4s" }}>
-            {[
-              { value: "10Gbps", label: "Скорость" },
-              { value: "50+", label: "Локаций" },
-              { value: "99.9%", label: "Uptime" },
-            ].map((stat, index) => (
-              <div key={index} className="text-center rounded-2xl border border-border/60 bg-glass px-4 py-4">
-                <div className="text-2xl md:text-3xl font-bold text-gradient mb-1">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4 text-xs uppercase tracking-[0.3em] text-muted-foreground/70 animate-fade-up" style={{ animationDelay: "0.5s" }}>
-            <span>WireGuard</span>
-            <span>Zero-Log</span>
-            <span>Reality Protocol</span>
-            <span>Anti-Censorship</span>
           </div>
         </div>
 
@@ -93,7 +70,7 @@ const Hero = () => {
         </div>
         <div className="absolute right-10 top-1/2 hidden lg:block animate-float" style={{ animationDelay: "2s" }}>
           <div className="w-14 h-14 rounded-2xl bg-glass flex items-center justify-center shadow-neon">
-            <Shield className="w-7 h-7 text-secondary" />
+            <MessageCircle className="w-7 h-7 text-secondary" />
           </div>
         </div>
       </div>
