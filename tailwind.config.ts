@@ -15,7 +15,7 @@ export default {
   	extend: {
   		fontFamily: {
   			sans: [
-  				'DM Sans',
+  				'Lato',
   				'ui-sans-serif',
   				'system-ui',
   				'-apple-system',
@@ -28,7 +28,7 @@ export default {
   				'sans-serif'
   			],
   			mono: [
-  				'SF Mono',
+  				'Fira Code',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',
@@ -39,7 +39,7 @@ export default {
   				'monospace'
   			],
   			serif: [
-  				'Crimson Pro',
+  				'EB Garamond',
   				'ui-serif',
   				'Georgia',
   				'Cambria',
