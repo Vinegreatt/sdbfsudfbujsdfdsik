@@ -3,10 +3,6 @@ import httpx
 
 REMNAWAVE_BASE_URL = os.getenv("REMNAWAVE_BASE_URL", "").rstrip("/")
 REMNAWAVE_TOKEN = os.getenv("REMNAWAVE_TOKEN", "")
-SUB_BASE_URL = os.getenv(
-    "REMNAWAVE_SUBSCRIPTION_BASE_URL",
-    "https://subscription.realityvpn.ru",
-).rstrip("/")
 
 
 class X3Web:
@@ -19,10 +15,10 @@ class X3Web:
     def _headers(self):
         return {"Authorization": f"Bearer {REMNAWAVE_TOKEN}"}
 
-    async def get_subscription_link(self, telegram_id: str) -> str:
+    async def get_user_by_username(self, telegram_id: str) -> dict | None:
         """
-        В Remnawave username == telegram_id.
-        Пытаемся получить пользователя по username и достать shortUuid.
+        В Remnawave username == telegram_id (строка).
+        Возвращает dict из поля response или None если 404.
         """
         async with httpx.AsyncClient(timeout=20) as client:
             r = await client.get(
@@ -30,34 +26,28 @@ class X3Web:
                 headers=self._headers(),
             )
             if r.status_code == 404:
-                return ""
+                return None
             r.raise_for_status()
             data = r.json()
+            return data.get("response") or data
 
-        # shortUuid может лежать по-разному
-        short_uuid = (
-            data.get("shortUuid")
-            or data.get("short_uuid")
-            or (data.get("user") or {}).get("shortUuid")
-            or (data.get("user") or {}).get("short_uuid")
-        )
-        if not short_uuid:
-            return ""
-        return f"{SUB_BASE_URL}/{short_uuid}"
-
-    async def devices(self, telegram_id: str):
+    async def devices_by_user_id(self, user_id: int) -> dict:
+        """
+        Предпочтительно работать через numeric id из Remnawave (у вас id=7000).
+        Если эндпоинт отличается — поправим по 404 из логов.
+        """
         async with httpx.AsyncClient(timeout=20) as client:
             r = await client.get(
-                f"{REMNAWAVE_BASE_URL}/api/users/{telegram_id}/devices",
+                f"{REMNAWAVE_BASE_URL}/api/users/{user_id}/devices",
                 headers=self._headers(),
             )
             r.raise_for_status()
             return r.json()
 
-    async def delete_device(self, telegram_id: str, hwid: str):
+    async def delete_device_by_user_id(self, user_id: int, hwid: str) -> dict:
         async with httpx.AsyncClient(timeout=20) as client:
             r = await client.delete(
-                f"{REMNAWAVE_BASE_URL}/api/users/{telegram_id}/devices/{hwid}",
+                f"{REMNAWAVE_BASE_URL}/api/users/{user_id}/devices/{hwid}",
                 headers=self._headers(),
             )
             r.raise_for_status()
