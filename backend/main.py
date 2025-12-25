@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-from X3 import X3
+from x3_web import X3Web
 
 
 def _env(name: str, default: Optional[str] = None) -> str:
@@ -144,7 +144,7 @@ async def get_me(request: Request) -> Dict[str, Any]:
     session = require_session(request)
     telegram_id = session.id
 
-    link = await X3().link(str(telegram_id))
+    link = await X3Web().get_subscription_link(str(telegram_id))
     short_uuid = None
     if link:
         short_uuid = link.rstrip("/").split("/")[-1]
@@ -205,13 +205,13 @@ async def get_me(request: Request) -> Dict[str, Any]:
 @app.get("/api/devices")
 async def get_devices(request: Request) -> Dict[str, Any]:
     session = require_session(request)
-    devices = await X3().devices(str(session.id))
+    devices = await X3Web().devices(str(session.id))
     return {"devices": devices}
 
 
 @app.delete("/api/devices/{hwid}")
 async def delete_device(hwid: str, request: Request) -> Dict[str, Any]:
     session = require_session(request)
-    await X3().delete_device(str(session.id), hwid)
-    devices = await X3().devices(str(session.id))
+    await X3Web().delete_device(str(session.id), hwid)
+    devices = await X3Web().devices(str(session.id))
     return {"devices": devices}
