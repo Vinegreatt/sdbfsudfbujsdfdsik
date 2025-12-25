@@ -1,23 +1,23 @@
-import { UserPlus, CreditCard, Rocket } from "lucide-react";
+import { MessageSquare, FileText, Rocket } from "lucide-react";
 
 const steps = [
   {
-    icon: UserPlus,
+    icon: MessageSquare,
     step: "01",
-    title: "Зарегистрируйтесь",
-    description: "Войдите через Telegram за секунды — никаких сложных форм и подтверждений email.",
+    title: "Откройте бота",
+    description: "Вся регистрация и управление подпиской происходят в Telegram.",
   },
   {
-    icon: CreditCard,
+    icon: FileText,
     step: "02",
-    title: "Выберите тариф",
-    description: "Подберите оптимальный план под ваши потребности и оплатите удобным способом.",
+    title: "Получите инструкции",
+    description: "Бот выдаст конфигурацию и короткую инструкцию для вашего устройства.",
   },
   {
     icon: Rocket,
     step: "03",
-    title: "Подключайтесь",
-    description: "Скачайте конфигурацию и наслаждайтесь безопасным интернетом на любом устройстве.",
+    title: "Подключитесь",
+    description: "Импортируйте конфигурацию и начните использовать VPN.",
   },
 ];
 
@@ -31,7 +31,7 @@ const HowItWorks = () => {
             Как <span className="text-gradient">начать</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Три простых шага до полной защиты в интернете
+            Пара шагов — и можно подключаться.
           </p>
         </div>
 

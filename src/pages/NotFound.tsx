@@ -30,7 +30,13 @@ const NotFound = () => {
             <Link to="/">Вернуться на главную</Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link to="/#pricing">Смотреть тарифы</Link>
+            <a
+              href="https://t.me/RealityVpnShop_bot"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Открыть бота
+            </a>
           </Button>
         </div>
       </div>

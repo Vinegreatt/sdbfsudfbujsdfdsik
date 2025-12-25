@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Shield, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -19,7 +17,6 @@ const Header = () => {
   const navLinks = [
     { href: "#features", label: "Преимущества" },
     { href: "#how-it-works", label: "Как это работает" },
-    { href: "#pricing", label: "Тарифы" },
     { href: "#faq", label: "FAQ" },
   ];
 
@@ -31,8 +28,12 @@ const Header = () => {
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="relative">
-            <Shield className="w-8 h-8 text-primary transition-transform duration-300 group-hover:scale-110" />
+          <div className="relative flex items-center">
+            <img
+              src="https://s.iimg.su/s/12/gnZBtCixillEgjWEaWR9HqRg9BcgYDfur5DhCzKX.png"
+              alt="RealityVPN"
+              className="w-10 h-10 rounded-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
             <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
           <span className="text-xl font-bold text-gradient">RealityVPN</span>
@@ -52,19 +53,23 @@ const Header = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/auth")}
-          >
-            Войти
+          <Button variant="ghost" size="sm" asChild>
+            <a
+              href="https://t.me/RealityVPNadmin"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Поддержка
+            </a>
           </Button>
-          <Button
-            variant="hero"
-            size="sm"
-            onClick={() => navigate("/auth")}
-          >
-            Начать
+          <Button variant="hero" size="sm" asChild>
+            <a
+              href="https://t.me/RealityVpnShop_bot"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Открыть бота
+            </a>
           </Button>
         </div>
 
@@ -93,23 +98,25 @@ const Header = () => {
               </a>
             ))}
             <div className="flex flex-col gap-2 pt-4 border-t border-border">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  navigate("/auth");
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                Войти
+              <Button variant="ghost" asChild>
+                <a
+                  href="https://t.me/RealityVPNadmin"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Поддержка
+                </a>
               </Button>
-              <Button
-                variant="hero"
-                onClick={() => {
-                  navigate("/auth");
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                Начать
+              <Button variant="hero" asChild>
+                <a
+                  href="https://t.me/RealityVpnShop_bot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Открыть бота
+                </a>
               </Button>
             </div>
           </nav>

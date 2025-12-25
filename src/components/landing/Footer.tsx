@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Shield, Send, MessageCircle } from "lucide-react";
+import { Send, MessageCircle } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -9,15 +9,19 @@ const Footer = () => {
           {/* Brand */}
           <div className="md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <Shield className="w-8 h-8 text-primary" />
+              <img
+                src="https://s.iimg.su/s/12/gnZBtCixillEgjWEaWR9HqRg9BcgYDfur5DhCzKX.png"
+                alt="RealityVPN"
+                className="w-9 h-9 rounded-full object-cover"
+              />
               <span className="text-xl font-bold text-gradient">RealityVPN</span>
             </Link>
             <p className="text-muted-foreground text-sm mb-4">
-              Премиальный VPN-сервис для безопасного и свободного интернета.
+              VPN-сервис с управлением через Telegram-бота.
             </p>
             <div className="flex gap-3">
               <a
-                href="https://t.me/realityvpn"
+                href="https://t.me/RealityVpnShop_bot"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-lg bg-glass border border-border flex items-center justify-center hover:border-primary/50 transition-colors"
@@ -25,7 +29,7 @@ const Footer = () => {
                 <Send className="w-5 h-5 text-muted-foreground hover:text-primary" />
               </a>
               <a
-                href="https://t.me/realityvpn_support"
+                href="https://t.me/RealityVPNadmin"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-lg bg-glass border border-border flex items-center justify-center hover:border-primary/50 transition-colors"
@@ -45,8 +49,8 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                  Тарифы
+                <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  Как подключиться
                 </a>
               </li>
               <li>
@@ -63,17 +67,22 @@ const Footer = () => {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="https://t.me/realityvpn_support"
+                  href="https://t.me/RealityVpnShop_bot"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground transition-colors text-sm"
                 >
-                  Telegram бот
+                  Telegram-бот
                 </a>
               </li>
               <li>
-                <a href="mailto:support@realityvpn.com" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                  Email поддержка
+                <a
+                  href="https://t.me/RealityVPNadmin"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground transition-colors text-sm"
+                >
+                  Поддержка в Telegram
                 </a>
               </li>
             </ul>
@@ -102,7 +111,7 @@ const Footer = () => {
             © {new Date().getFullYear()} RealityVPN. Все права защищены.
           </p>
           <p className="text-sm text-muted-foreground">
-            Сделано с 💙 для вашей безопасности
+            Информация на сайте носит справочный характер.
           </p>
         </div>
       </div>

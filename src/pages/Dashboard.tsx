@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { 
   Shield, 
   User, 
-  CreditCard, 
   Settings, 
   LogOut, 
   Download,
@@ -15,8 +14,7 @@ import {
   Monitor,
   Laptop,
   Send,
-  ChevronRight,
-  Zap
+  ChevronRight
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -186,7 +184,6 @@ const Dashboard = () => {
   const tabs = [
     { id: "overview", label: "Обзор", icon: Shield },
     { id: "access", label: "Доступ", icon: Settings },
-    { id: "payments", label: "Платежи", icon: CreditCard },
     { id: "profile", label: "Профиль", icon: User },
   ];
 
@@ -196,7 +193,11 @@ const Dashboard = () => {
       <header className="border-b border-border bg-glass sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Shield className="w-8 h-8 text-primary" />
+            <img
+              src="https://s.iimg.su/s/12/gnZBtCixillEgjWEaWR9HqRg9BcgYDfur5DhCzKX.png"
+              alt="RealityVPN"
+              className="w-9 h-9 rounded-full object-cover"
+            />
             <span className="text-xl font-bold text-gradient">RealityVPN</span>
           </div>
           
@@ -238,10 +239,10 @@ const Dashboard = () => {
             <div className="mt-6 p-4 rounded-xl bg-glass border border-border">
               <h4 className="font-medium mb-2">Нужна помощь?</h4>
               <p className="text-sm text-muted-foreground mb-4">
-                Наша поддержка доступна 24/7
+                Напишите в поддержку в Telegram
               </p>
               <a
-                href="https://t.me/realityvpn_support"
+                href="https://t.me/RealityVPNadmin"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -263,7 +264,7 @@ const Dashboard = () => {
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                     <div>
                       <h2 className="text-xl font-semibold mb-1">Статус подписки</h2>
-                      <p className="text-muted-foreground">Управляйте вашим планом</p>
+                      <p className="text-muted-foreground">Управление подпиской доступно в боте</p>
                     </div>
                     <div className={`px-4 py-2 rounded-full text-sm font-medium ${
                       subscriptionActive
@@ -296,13 +297,15 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                    <Button variant="hero" className="flex-1">
-                      <Zap className="w-4 h-4 mr-2" />
-                      Продлить подписку
-                    </Button>
-                    <Button variant="outline" className="flex-1">
-                      Изменить план
+                  <div className="mt-6">
+                    <Button variant="outline" asChild className="w-full sm:w-auto">
+                      <a
+                        href="https://t.me/RealityVpnShop_bot"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Открыть бота для управления подпиской
+                      </a>
                     </Button>
                   </div>
                 </div>
@@ -416,68 +419,6 @@ const Dashboard = () => {
                     </Button>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Payments Tab */}
-            {activeTab === "payments" && (
-              <div className="p-6 rounded-2xl bg-glass border border-border">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold">История платежей</h2>
-                  <Button variant="hero" size="sm">
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Оплатить
-                  </Button>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Дата</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Тип</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Сумма</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Статус</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {profile.payments.map((payment) => {
-                        const createdAt = parseDate(payment.created_at);
-                        const createdLabel = createdAt
-                          ? createdAt.toLocaleDateString("ru-RU")
-                          : payment.created_at;
-                        return (
-                          <tr
-                            key={payment.payment_id ?? `${payment.created_at}-${payment.amount}`}
-                            className="border-b border-border/50"
-                          >
-                            <td className="py-4 px-4 text-sm">{createdLabel}</td>
-                            <td className="py-4 px-4 text-sm">
-                              {payment.subscription_type || "—"}
-                            </td>
-                            <td className="py-4 px-4 text-sm font-medium">{payment.amount}</td>
-                            <td className="py-4 px-4">
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                payment.status === "completed"
-                                  ? "bg-green-500/20 text-green-400"
-                                  : "bg-yellow-500/20 text-yellow-400"
-                              }`}>
-                                {payment.status === "completed" ? "Оплачен" : payment.status}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {profile.payments.length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <CreditCard className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>История платежей пуста</p>
-                  </div>
-                )}
               </div>
             )}
 
