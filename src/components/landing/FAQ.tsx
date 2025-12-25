@@ -4,63 +4,60 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { HelpCircle } from "lucide-react";
 
-const faqs = [
+const faqItems = [
   {
-    question: "Как работает RealityVPN?",
-    answer: "Сервис создаёт защищённое соединение между устройством и сервером. Это помогает безопасно передавать данные и получать доступ к нужным ресурсам.",
-  },
-  {
-    question: "Где оформляется подписка и продление?",
-    answer: "Все действия с подпиской выполняются в Telegram-боте RealityVPN. На сайте нет оплаты и выбора тарифов.",
-  },
-  {
-    question: "Как получить конфигурацию?",
-    answer: "Бот выдаёт конфигурацию и краткую инструкцию. Обычно это занимает пару минут.",
+    question: "Как начать пользоваться RealityVPN?",
+    answer: "Перейдите в наш Telegram-бот @RealityVpnShop_bot, выберите тарифный план и получите конфигурацию. Подключение занимает менее 2 минут.",
   },
   {
     question: "Какие устройства поддерживаются?",
-    answer: "Поддерживаются популярные платформы: iOS, Android, Windows, macOS и Linux. Конфигурации выдаются в боте.",
+    answer: "RealityVPN работает на iOS, Android, Windows, macOS и Linux. Одна подписка позволяет подключить несколько устройств.",
   },
   {
-    question: "Куда обращаться за поддержкой?",
-    answer: "Напишите в поддержку: t.me/RealityVPNadmin. Мы отвечаем в Telegram.",
+    question: "Вы храните логи активности?",
+    answer: "Нет. Мы придерживаемся строгой политики No-Logs — не храним и не отслеживаем вашу онлайн-активность.",
   },
   {
-    question: "Что делать, если конфигурация не подключается?",
-    answer: "Проверьте, что вы импортировали актуальный файл, и обратитесь в поддержку — подскажем и проверим настройки.",
+    question: "Какие способы оплаты доступны?",
+    answer: "Принимаем карты, криптовалюту и другие способы оплаты через проверенных провайдеров.",
+  },
+  {
+    question: "Как связаться с поддержкой?",
+    answer: "Напишите нам @RealityVPNadmin в Telegram — мы на связи 24/7.",
   },
 ];
 
 const FAQ = () => {
   return (
-    <section id="faq" className="py-24 relative">
-      {/* Background */}
+    <section id="faq" className="py-32 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/10 to-background" />
-      
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Часто задаваемые <span className="text-gradient">вопросы</span>
-          </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Короткие ответы на основные вопросы.
-          </p>
-        </div>
 
+      <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-glass border border-border/50 mb-6">
+              <HelpCircle className="w-4 h-4 text-primary" />
+              <span className="text-sm text-primary font-medium">FAQ</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Частые <span className="text-gradient">вопросы</span>
+            </h2>
+          </div>
+
           <Accordion type="single" collapsible className="space-y-4">
-            {faqs.map((faq, index) => (
+            {faqItems.map((item, index) => (
               <AccordionItem
                 key={index}
                 value={`item-${index}`}
-                className="bg-glass border border-border/70 rounded-xl px-6 data-[state=open]:border-primary/50 transition-colors shadow-card"
+                className="border border-border/50 rounded-2xl px-6 bg-card/50 backdrop-blur-sm hover:border-primary/30 transition-colors duration-300 data-[state=open]:border-primary/50 data-[state=open]:shadow-glow"
               >
-                <AccordionTrigger className="text-left hover:no-underline py-4">
-                  <span className="font-medium">{faq.question}</span>
+                <AccordionTrigger className="text-left text-lg font-medium py-5 hover:no-underline hover:text-primary transition-colors">
+                  {item.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-4">
-                  {faq.answer}
+                <AccordionContent className="text-muted-foreground pb-5 leading-relaxed">
+                  {item.answer}
                 </AccordionContent>
               </AccordionItem>
             ))}
